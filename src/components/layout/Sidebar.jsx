@@ -76,6 +76,7 @@ export function Sidebar({ role }) {
       <div className="p-4 border-t border-slate-200 dark:border-slate-800">
         <NavLink
           to="/login"
+          onClick={() => localStorage.removeItem('user')}
           className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors group"
         >
           <LogOut className="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-red-500 dark:group-hover:text-red-400" />

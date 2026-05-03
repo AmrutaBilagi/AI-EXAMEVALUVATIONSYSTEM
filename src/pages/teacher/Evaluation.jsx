@@ -4,12 +4,6 @@ import { Button } from '../../components/ui/Button';
 import { FileText, CheckCircle, Search, Save, Edit3, XCircle, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 
-const mockStudents = [
-  { id: 1, name: 'John Doe', usn: '1XX20CS001', status: 'Pending', score: null },
-  { id: 2, name: 'Jane Smith', usn: '1XX20CS002', status: 'Evaluated', score: 85 },
-  { id: 3, name: 'Mike Johnson', usn: '1XX20CS003', status: 'Pending', score: null }
-];
-
 const mockEvaluationData = [
   {
     qNo: 'Q1',
@@ -19,22 +13,28 @@ const mockEvaluationData = [
     modelAnswer: 'Object-Oriented Programming relies on four main principles: Encapsulation (hiding state), Abstraction (hiding implementation), Inheritance (reusing code), and Polymorphism (many forms).',
     aiScore: 8,
     aiFeedback: 'Good understanding of the core 4 principles. Missing detailed explanation of what each principle does.',
-  },
-  {
-    qNo: 'Q2',
-    question: 'What is a binary tree?',
-    maxMarks: 5,
-    studentAnswer: 'A binary tree is a tree where each node has two children.',
-    modelAnswer: 'A tree data structure in which each node has at most two children, referred to as the left child and the right child.',
-    aiScore: 3,
-    aiFeedback: 'Partially correct. A node has "at most" two children, not strictly two.',
   }
 ];
 
 export function TeacherEvaluation() {
+  const [submissions, setSubmissions] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluation, setEvaluation] = useState(mockEvaluationData);
   const [saved, setSaved] = useState(false);
+
+  React.useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/teacher/submissions');
+        const data = await response.json();
+        setSubmissions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch submissions", err);
+      }
+    };
+    fetchSubmissions();
+  }, []);
+
 
   const handleScoreChange = (index, value) => {
     const newEval = [...evaluation];
@@ -65,12 +65,12 @@ export function TeacherEvaluation() {
           <CardHeader className="border-b border-slate-100 dark:border-slate-700 pb-4 flex-shrink-0">
             <CardTitle className="dark:text-white flex items-center justify-between">
               Submissions
-              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">{mockStudents.length} Total</span>
+              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">{submissions.length} Total</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-y-auto flex-1">
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-              {mockStudents.map(student => (
+              {submissions.map(student => (
                 <div 
                   key={student.id} 
                   onClick={() => setSelectedStudent(student)}
@@ -83,12 +83,12 @@ export function TeacherEvaluation() {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-bold text-slate-800 dark:text-white">{student.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{student.usn}</p>
+                      <p className="font-bold text-slate-800 dark:text-white">{student.name || 'Unknown Student'}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{student.usn || 'No USN'}</p>
                     </div>
                     {student.status === 'Evaluated' ? (
                       <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
-                        <CheckCircle className="w-3 h-3" /> {student.score}/100
+                        <CheckCircle className="w-3 h-3" /> {student.score}/{student.maxMarks}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full">

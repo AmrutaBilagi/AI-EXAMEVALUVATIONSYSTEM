@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Navbar({ role }) {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const notifications = [
     { id: 1, text: "Your midterm results are ready to download.", time: "2 hours ago" },
@@ -50,11 +58,15 @@ export function Navbar({ role }) {
         
         <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate(`/${role}/settings`)}>
           <div className="flex flex-col items-end">
-            <span className="text-sm font-bold text-slate-800 dark:text-white">John Doe</span>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 capitalize">{role}</span>
+            <span className="text-sm font-bold text-slate-800 dark:text-white">
+              {user ? user.name : 'Guest'}
+            </span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 capitalize">
+              {user ? user.role : role || 'User'}
+            </span>
           </div>
           <div className="w-10 h-10 bg-gradient-to-tr from-primary-500 to-blue-500 text-white rounded-full flex items-center justify-center font-bold shadow-md">
-            JD
+            {user && user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'G'}
           </div>
         </div>
       </div>

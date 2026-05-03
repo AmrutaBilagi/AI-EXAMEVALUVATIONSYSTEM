@@ -83,7 +83,9 @@ export function TeacherUploadExam() {
   const [modelAnswer, setModelAnswer] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [parsedQuestions, setParsedQuestions] = useState(null);
+  const [rawText, setRawText] = useState(null);
   const [examSaved, setExamSaved] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleUploadSubmit = async () => {
     if (!questionPaper || !modelAnswer) {
@@ -106,18 +108,13 @@ export function TeacherUploadExam() {
       const data = await response.json();
       if (response.ok) {
         setParsedQuestions(data.parsedQuestions);
+        if (data.rawText) setRawText(data.rawText);
       } else {
-        alert(data.error || "Failed to process files");
+        setErrorMsg('Could not parse PDF correctly');
       }
     } catch (err) {
-      console.error("Backend error, using mock parsing...", err);
-      // Mock parsing for demonstration if backend fails
-      setTimeout(() => {
-        setParsedQuestions([
-          { question_number: 'Q1', question_text: 'Explain the principles of OOP.', marks: 10, model_answer: 'Object-Oriented Programming relies on four principles: Encapsulation, Abstraction, Inheritance, and Polymorphism.' },
-          { question_number: 'Q2', question_text: 'What is a binary tree?', marks: 5, model_answer: 'A tree data structure in which each node has at most two children, referred to as the left child and the right child.' }
-        ]);
-      }, 1500);
+      console.error("Backend error", err);
+      setErrorMsg('Could not parse PDF correctly');
     } finally {
       setUploading(false);
     }
@@ -129,9 +126,30 @@ export function TeacherUploadExam() {
     setParsedQuestions(newQuestions);
   };
 
-  const handleSaveExam = () => {
-    // In a real app, send parsedQuestions to the backend to save in the SQLite DB
-    setExamSaved(true);
+  const handleSaveExam = async () => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const response = await fetch('http://localhost:5000/api/save-exam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Exam',
+          subject: 'General',
+          totalMarks: parsedQuestions.reduce((sum, q) => sum + parseInt(q.marks || 0), 0),
+          questions: parsedQuestions,
+          createdBy: storedUser.id || 1
+        })
+      });
+      if (response.ok) {
+        setExamSaved(true);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to save exam to database');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving exam');
+    }
   };
 
   if (examSaved) {
@@ -176,11 +194,12 @@ export function TeacherUploadExam() {
               />
             </div>
             
-            <div className="pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+              {errorMsg && <p className="text-red-500 font-bold">{errorMsg}</p>}
               <Button 
                 onClick={handleUploadSubmit} 
                 disabled={uploading || (!questionPaper || !modelAnswer)} 
-                className="h-12 px-8 text-lg shadow-lg shadow-primary-500/20 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 transition-all disabled:opacity-50"
+                className="h-12 px-8 text-lg shadow-lg shadow-primary-500/20 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 transition-all disabled:opacity-50 ml-auto"
               >
                 {uploading ? <><Loader2 className="animate-spin mr-2" /> Parsing Documents...</> : 'Extract & Parse Content'}
               </Button>
@@ -200,7 +219,7 @@ export function TeacherUploadExam() {
           </div>
 
           <div className="space-y-6">
-            {parsedQuestions.map((q, idx) => (
+            {parsedQuestions.length > 0 ? parsedQuestions.map((q, idx) => (
               <Card key={idx} className="border-0 shadow-md dark:bg-slate-800 border-l-4 border-l-primary-500 overflow-hidden">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex gap-4">
@@ -242,7 +261,16 @@ export function TeacherUploadExam() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              <Card className="border-0 shadow-md dark:bg-slate-800 border-l-4 border-l-yellow-500 overflow-hidden">
+                <CardContent className="p-6">
+                  <h3 className="font-bold text-yellow-600 mb-2">No structured questions found. Showing raw text:</h3>
+                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg overflow-auto max-h-96 text-sm text-slate-700 dark:text-slate-300 font-mono whitespace-pre-wrap">
+                    {rawText || "No text could be extracted."}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           <div className="flex justify-end gap-4 mt-8 sticky bottom-4 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl">

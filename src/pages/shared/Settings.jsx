@@ -20,12 +20,13 @@ export function Settings({ role }) {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
-  // Mock user details - in real app, fetch from backend/context
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  
   const userDetails = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: role,
-    joined: 'October 2023'
+    name: storedUser.name || 'Guest',
+    email: storedUser.email || 'guest@example.com',
+    role: storedUser.role || role,
+    joined: 'Recently'
   };
 
   return (
@@ -42,7 +43,7 @@ export function Settings({ role }) {
           <Card className="border-0 shadow-lg dark:bg-slate-800 dark:border-slate-700">
             <CardContent className="p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 bg-gradient-to-tr from-primary-500 to-blue-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg shadow-primary-500/30">
-                {userDetails.name.split(' ').map(n => n[0]).join('')}
+                {userDetails.name !== 'Guest' ? userDetails.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'G'}
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{userDetails.name}</h3>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 mt-2 capitalize">

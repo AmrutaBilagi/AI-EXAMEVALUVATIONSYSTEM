@@ -10,6 +10,7 @@ import { TeacherDashboard } from './pages/teacher/Dashboard';
 import { TeacherEvaluation } from './pages/teacher/Evaluation';
 import { TeacherUploadExam } from './pages/teacher/UploadExam';
 import { AdminDashboard } from './pages/admin/Dashboard';
+import { UserManagement } from './pages/admin/UserManagement';
 import { Settings } from './pages/shared/Settings';
 
 import { StudentResults } from './pages/student/Results';
@@ -24,6 +25,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register/admin" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Student Routes */}
@@ -45,7 +47,7 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin" element={<MainLayout role="admin" />}>
           <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<div className="text-2xl font-bold dark:text-white">User Management</div>} />
+          <Route path="users" element={<UserManagement />} />
           <Route path="settings" element={<Settings role="admin" />} />
         </Route>
       </Routes>

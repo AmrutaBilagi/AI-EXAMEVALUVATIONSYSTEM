@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Sparkles, Mail, Lock, User as UserIcon, Key, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -7,11 +7,14 @@ import { clsx } from 'clsx';
 
 export function Register() {
   const navigate = useNavigate();
-  const [role, setRole] = useState('student');
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/register/admin';
+  const [role, setRole] = useState(isAdminRoute ? 'admin' : 'student');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [usn, setUsn] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,7 +23,20 @@ export function Register() {
     setLoading(true);
     setError('');
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      setLoading(false);
+      return;
+    }
+
     try {
+      const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        setError('Password must be at least 8 characters and contain both letters and numbers.');
+        setLoading(false);
+        return;
+      }
+
       const payload = { name, email, password, role };
       if (role === 'student') {
         payload.usn = usn;
@@ -65,23 +81,25 @@ export function Register() {
 
       <Card className="w-full max-w-md shadow-2xl shadow-slate-200/50 dark:shadow-none border-0 ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-800 relative z-10">
         <CardContent className="p-8">
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-xl mb-8 shadow-inner">
-            {['student', 'teacher'].map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className={clsx(
-                  "flex-1 py-2.5 text-sm font-bold rounded-lg capitalize transition-all duration-200",
-                  role === r
-                    ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-md transform scale-[1.02]"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
-                )}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
+          {!isAdminRoute && (
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-900/50 rounded-xl mb-8 shadow-inner">
+              {['student', 'teacher'].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={clsx(
+                    "flex-1 py-2.5 text-sm font-bold rounded-lg capitalize transition-all duration-200",
+                    role === r
+                      ? "bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-400 shadow-md transform scale-[1.02]"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
+                  )}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
 
           <form onSubmit={handleRegister} className="space-y-5">
             {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg font-medium">{error}</div>}
@@ -152,6 +170,23 @@ export function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white outline-none transition-all hover:bg-white dark:hover:bg-slate-900"
                   placeholder="Create a strong password"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block">Confirm Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 dark:bg-slate-900/50 text-slate-900 dark:text-white outline-none transition-all hover:bg-white dark:hover:bg-slate-900"
+                  placeholder="Confirm your password"
                 />
               </div>
             </div>

@@ -30,7 +30,7 @@ export function Login() {
       if (response.ok) {
         // Save user data securely (e.g., in Context or LocalStorage)
         localStorage.setItem('user', JSON.stringify(data));
-        navigate(`/${role}/dashboard`);
+        navigate(`/${data.role}/dashboard`);
       } else {
         setError(data.error || 'Invalid credentials');
       }
@@ -125,11 +125,18 @@ export function Login() {
             </Button>
           </form>
 
-          {role !== 'admin' && (
+          {role !== 'admin' ? (
             <div className="mt-8 text-center text-sm font-semibold text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-6">
               Don't have an account?{' '}
               <Link to="/register" className="font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors">
                 Create one now
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-8 text-center text-sm font-semibold text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-6">
+              Don't have an account?{' '}
+              <Link to="/register/admin" className="font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors">
+                Register
               </Link>
             </div>
           )}

@@ -8,6 +8,7 @@ export function StudentUploadSheet() {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState(null);
   const inputRef = useRef(null);
 
   const handleDrag = (e) => {
@@ -54,14 +55,36 @@ export function StudentUploadSheet() {
     inputRef.current.click();
   };
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
     if (!file) return;
     setUploading(true);
-    // Simulate API upload
-    setTimeout(() => {
+    
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const formData = new FormData();
+    formData.append('answerSheet', file);
+    formData.append('examId', 1); // hardcoded exam id for now
+    if (user && user.id) {
+      formData.append('userId', user.id);
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/upload-answer-sheet', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setEvaluationResult({ score: data.score, maxMarks: data.max_marks });
+        setUploadSuccess(true);
+      } else {
+        alert("Upload failed: " + data.error);
+      }
+    } catch (err) {
+      console.error("Failed to upload", err);
+      alert("Failed to connect to the server.");
+    } finally {
       setUploading(false);
-      setUploadSuccess(true);
-    }, 2000);
+    }
   };
 
   return (
@@ -145,7 +168,19 @@ export function StudentUploadSheet() {
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Upload Successful!</h2>
                 <p className="text-slate-500 dark:text-slate-400 mt-2">Your answer sheet has been securely submitted for evaluation.</p>
               </div>
-              <Button onClick={() => { setFile(null); setUploadSuccess(false); }} variant="outline" className="mt-4">
+              
+              {evaluationResult && (
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 w-full max-w-sm mt-6">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">AI Evaluation Result</h3>
+                  <div className="flex items-end justify-center gap-2">
+                    <span className="text-5xl font-black text-primary-600 dark:text-primary-400">{evaluationResult.score}</span>
+                    <span className="text-xl font-bold text-slate-400 mb-1">/ {evaluationResult.maxMarks}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 mt-4">This score is visible in the Teacher Dashboard and My Results.</p>
+                </div>
+              )}
+
+              <Button onClick={() => { setFile(null); setUploadSuccess(false); setEvaluationResult(null); }} variant="outline" className="mt-4">
                 Upload Another File
               </Button>
             </div>

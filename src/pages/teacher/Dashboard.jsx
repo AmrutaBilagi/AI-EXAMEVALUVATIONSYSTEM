@@ -14,6 +14,39 @@ const data = [
 ];
 
 export function TeacherDashboard() {
+  const [stats, setStats] = React.useState({
+    totalStudents: 0,
+    submissions: 0,
+    evaluated: 0,
+  });
+  const [recentSubmissions, setRecentSubmissions] = React.useState([]);
+
+  React.useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [usersRes, subsRes] = await Promise.all([
+          fetch('http://localhost:5000/api/users'),
+          fetch('http://localhost:5000/api/teacher/submissions')
+        ]);
+        const users = await usersRes.json();
+        const submissions = await subsRes.json();
+
+        const students = users.filter(u => u.role === 'student').length;
+        const evaluated = submissions.filter(s => s.status === 'Evaluated').length;
+
+        setStats({
+          totalStudents: students,
+          submissions: submissions.length,
+          evaluated: evaluated,
+        });
+
+        setRecentSubmissions(submissions.slice(0, 5));
+      } catch (err) {
+        console.error("Failed to fetch teacher dashboard data", err);
+      }
+    };
+    fetchDashboardData();
+  }, []);
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-800">Teacher Dashboard</h1>
@@ -26,7 +59,7 @@ export function TeacherDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500">Total Students</p>
-              <h3 className="text-2xl font-bold text-slate-800">124</h3>
+              <h3 className="text-2xl font-bold text-slate-800">{stats.totalStudents}</h3>
             </div>
           </CardContent>
         </Card>
@@ -38,7 +71,7 @@ export function TeacherDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500">Submissions</p>
-              <h3 className="text-2xl font-bold text-slate-800">89</h3>
+              <h3 className="text-2xl font-bold text-slate-800">{stats.submissions}</h3>
             </div>
           </CardContent>
         </Card>
@@ -50,7 +83,7 @@ export function TeacherDashboard() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500">Evaluated</p>
-              <h3 className="text-2xl font-bold text-slate-800">45</h3>
+              <h3 className="text-2xl font-bold text-slate-800">{stats.evaluated}</h3>
             </div>
           </CardContent>
         </Card>
@@ -94,22 +127,25 @@ export function TeacherDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+              {recentSubmissions.map((sub, i) => (
+                <div key={sub.id || i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-full border border-slate-200 flex items-center justify-center font-semibold text-slate-600">
-                      S{i}
+                      S{i + 1}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-800">Student {i}</p>
-                      <p className="text-xs text-slate-500">Midterm Exam - Physics</p>
+                      <p className="text-sm font-medium text-slate-800">{sub.name || `Student ${i+1}`}</p>
+                      <p className="text-xs text-slate-500">{sub.usn || 'No USN'}</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Pending Evaluation
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sub.status === 'Evaluated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {sub.status || 'Pending Evaluation'}
                   </span>
                 </div>
               ))}
+              {recentSubmissions.length === 0 && (
+                <p className="text-slate-500 text-sm text-center py-4">No submissions yet.</p>
+              )}
             </div>
           </CardContent>
         </Card>
